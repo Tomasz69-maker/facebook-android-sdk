@@ -18,37 +18,38 @@
  * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
  */
 
-package com.facebook.appevents;
+package com.facebook.referrals;
 
+import android.content.Intent;
 import android.os.Bundle;
-import com.facebook.FacebookTestCase;
-import com.facebook.GraphRequest;
-import com.facebook.GraphResponse;
-import com.facebook.TestBlocker;
+import androidx.fragment.app.Fragment;
 
-public class UpdateUserPropertiesTests extends FacebookTestCase {
-  public void testUserUpdateProperties() throws Exception {
-    final TestBlocker blocker = getTestBlocker();
-    Bundle parameters = new Bundle();
-    parameters.putString("custom_value", "1");
-    AppEventsLogger.setUserID("1");
-    AppEventsLogger.updateUserProperties(
-        parameters,
-        getApplicationId(),
-        new GraphRequest.Callback() {
-          @Override
-          public void onCompleted(GraphResponse response) {
-            if (response.getError() != null) {
-              blocker.setException(response.getError().getException());
-            }
+/**
+ * This Fragment is a necessary part of the Facebook referral process but is not meant to be used
+ * directly.
+ *
+ * @see com.facebook.FacebookActivity
+ */
+public class ReferralFragment extends Fragment {
+  public static final String TAG = "ReferralFragment";
 
-            blocker.signal();
-          }
-        });
+  private ReferralClient referralClient;
 
-    blocker.waitForSignals(1);
-    if (blocker.getException() != null) {
-      throw blocker.getException();
-    }
+  @Override
+  public void onCreate(Bundle savedInstanceState) {
+    super.onCreate(savedInstanceState);
+    referralClient = new ReferralClient(this);
+  }
+
+  @Override
+  public void onResume() {
+    super.onResume();
+    referralClient.startReferral();
+  }
+
+  @Override
+  public void onActivityResult(int requestCode, int resultCode, Intent data) {
+    super.onActivityResult(requestCode, resultCode, data);
+    referralClient.onActivityResult(requestCode, resultCode, data);
   }
 }

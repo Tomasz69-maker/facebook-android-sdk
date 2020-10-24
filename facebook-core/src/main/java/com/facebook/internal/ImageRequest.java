@@ -22,7 +22,10 @@ package com.facebook.internal;
 
 import android.content.Context;
 import android.net.Uri;
+import android.util.Log;
 import com.facebook.FacebookSdk;
+import com.facebook.internal.qualityvalidation.Excuse;
+import com.facebook.internal.qualityvalidation.ExcusesForDesignViolations;
 import java.util.Locale;
 
 /**
@@ -30,6 +33,7 @@ import java.util.Locale;
  * Android. Use of any of the classes in this package is unsupported, and they may be modified or
  * removed without warning at any time.
  */
+@ExcusesForDesignViolations(@Excuse(type = "MISSING_UNIT_TEST", reason = "Legacy"))
 public class ImageRequest {
 
   public interface Callback {
@@ -89,6 +93,14 @@ public class ImageRequest {
 
     if (!Utility.isNullOrEmpty(accessToken)) {
       builder.appendQueryParameter(ACCESS_TOKEN_PARAM, accessToken);
+    } else if (!Utility.isNullOrEmpty(FacebookSdk.getClientToken())
+        && !Utility.isNullOrEmpty(FacebookSdk.getApplicationId())) {
+      builder.appendQueryParameter(
+          ACCESS_TOKEN_PARAM, FacebookSdk.getApplicationId() + "|" + FacebookSdk.getClientToken());
+    } else {
+      Log.d(
+          "ImageRequest",
+          "Needs access token to fetch profile picture. Without an access token a default silhoutte picture is returned");
     }
 
     return builder.build();

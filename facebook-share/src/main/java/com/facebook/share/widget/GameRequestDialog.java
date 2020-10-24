@@ -45,9 +45,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Provides functionality to send requests in games. see
- * https://developers.facebook.com/docs/games/requests
+ * Provides functionality to send requests in games.
+ *
+ * @deprecated This class is now deprecated,
+ *     <p>Use {@link com.facebook.gamingservices.GameRequestDialog}
+ *     <p>see https://developers.facebook.com/docs/games/requests
  */
+@Deprecated
 public class GameRequestDialog
     extends FacebookDialogBase<GameRequestContent, GameRequestDialog.Result> {
 

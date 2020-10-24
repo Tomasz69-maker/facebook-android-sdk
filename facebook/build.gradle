@@ -37,16 +37,14 @@ dependencies {
     api project(':facebook-common')
     api project(':facebook-login')
     api project(":facebook-share")
-    api project(":facebook-places")
     api project(":facebook-applinks")
     api project(":facebook-messenger")
     api project(":facebook-gamingservices")
-    // @fb-only: api project(":facebook-marketing")
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_ver"
     // Unit Tests
     testImplementation "junit:junit:$junitVersion"
-    testImplementation 'org.robolectric:robolectric:4.3.1'
+    testImplementation 'org.robolectric:robolectric:4.4'
     testImplementation 'androidx.test:core:1.0.0'
 
     testImplementation "org.mockito:mockito-inline:2.26.0"
@@ -63,10 +61,11 @@ dependencies {
     androidTestImplementation 'org.mockito:mockito-core:3.2.4'
     androidTestImplementation 'com.google.dexmaker:dexmaker:1.2'
     androidTestImplementation 'com.google.dexmaker:dexmaker-mockito:1.2'
-    androidTestImplementation 'com.squareup.assertj:assertj-android:1.0.0'
 
     testImplementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_ver"
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_ver"
+    
+    testImplementation project(":facebook-places")
 
 }
 

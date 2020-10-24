@@ -52,6 +52,7 @@ import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
 import com.facebook.HttpMethod;
 import com.facebook.appevents.UserDataStore;
+import com.facebook.internal.instrument.crashshield.AutoHandleExceptions;
 import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
@@ -1188,7 +1189,7 @@ public final class Utility {
   }
 
   // getAvailableBlocks/getBlockSize deprecated but required pre-API v18
-  @SuppressWarnings("deprecation")
+  @SuppressWarnings({"deprecation", "ExternalStorageUse"})
   private static void refreshAvailableExternalStorage() {
     try {
       if (externalStorageExists()) {
@@ -1203,7 +1204,7 @@ public final class Utility {
   }
 
   // getAvailableBlocks/getBlockSize deprecated but required pre-API v18
-  @SuppressWarnings("deprecation")
+  @SuppressWarnings({"deprecation", "ExternalStorageUse"})
   private static void refreshTotalExternalStorage() {
     try {
       if (externalStorageExists()) {
@@ -1381,6 +1382,43 @@ public final class Utility {
       }
     } catch (Exception e) {
       /* no op */
+    }
+    return false;
+  }
+
+  @AutoHandleExceptions
+  @Nullable
+  public static JSONObject getDataProcessingOptions() {
+    final Context context = FacebookSdk.getApplicationContext();
+    String data =
+        context
+            .getSharedPreferences(
+                FacebookSdk.DATA_PROCESSING_OPTIONS_PREFERENCES, Context.MODE_PRIVATE)
+            .getString(FacebookSdk.DATA_PROCESSION_OPTIONS, null);
+    if (data != null) {
+      try {
+        return new JSONObject(data);
+      } catch (JSONException e) {
+      }
+    }
+    return null;
+  }
+
+  @AutoHandleExceptions
+  public static boolean isDataProcessingRestricted() {
+    JSONObject dataProcessingOptions = getDataProcessingOptions();
+    if (dataProcessingOptions == null) {
+      return false;
+    }
+    try {
+      JSONArray options = dataProcessingOptions.getJSONArray("data_processing_options");
+      for (int i = 0; i < options.length(); i++) {
+        String option = options.getString(i).toLowerCase();
+        if (option.equals("ldu")) {
+          return true;
+        }
+      }
+    } catch (Exception e) {
     }
     return false;
   }

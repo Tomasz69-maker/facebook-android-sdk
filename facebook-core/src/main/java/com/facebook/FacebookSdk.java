@@ -37,6 +37,7 @@ import com.facebook.appevents.AppEventsLogger;
 import com.facebook.appevents.AppEventsManager;
 import com.facebook.appevents.internal.ActivityLifecycleTracker;
 import com.facebook.appevents.internal.AppEventsLoggerUtility;
+import com.facebook.appevents.ondeviceprocessing.OnDeviceProcessingManager;
 import com.facebook.core.BuildConfig;
 import com.facebook.internal.AttributionIdentifiers;
 import com.facebook.internal.BoltsMeasurementEventListener;
@@ -48,6 +49,7 @@ import com.facebook.internal.ServerProtocol;
 import com.facebook.internal.Utility;
 import com.facebook.internal.Validate;
 import com.facebook.internal.instrument.InstrumentManager;
+import com.facebook.internal.instrument.crashshield.AutoHandleExceptions;
 import com.facebook.internal.logging.monitor.MonitorManager;
 import java.io.File;
 import java.security.MessageDigest;
@@ -57,8 +59,11 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
-import java.util.concurrent.*;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executor;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicLong;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -104,6 +109,10 @@ public final class FacebookSdk {
   /** The key for AppEvent perfernece setting. */
   public static final String APP_EVENT_PREFERENCES = "com.facebook.sdk.appEventPreferences";
 
+  /** The key for the data processing options preference setting. */
+  public static final String DATA_PROCESSING_OPTIONS_PREFERENCES =
+      "com.facebook.sdk.DataProcessingOptions";
+
   /** The key for the application ID in the Android manifest. */
   public static final String APPLICATION_ID_PROPERTY = "com.facebook.sdk.ApplicationId";
 
@@ -136,6 +145,15 @@ public final class FacebookSdk {
 
   /** The key for the monitor enable in the Android manifest. */
   public static final String MONITOR_ENABLED_PROPERTY = "com.facebook.sdk.MonitorEnabled";
+
+  /** The key for modes in data processing options. */
+  public static final String DATA_PROCESSION_OPTIONS = "data_processing_options";
+
+  /** The key for country in data processing options. */
+  public static final String DATA_PROCESSION_OPTIONS_COUNTRY = "data_processing_options_country";
+
+  /** The key for state in data processing options. */
+  public static final String DATA_PROCESSION_OPTIONS_STATE = "data_processing_options_state";
 
   private static Boolean sdkInitialized = false;
   private static Boolean sdkFullyInitialized = false;
@@ -217,7 +235,7 @@ public final class FacebookSdk {
   /**
    * This function initializes the Facebook SDK. This function is called automatically on app start
    * up if the proper entries are listed in the AndroidManifest, such as the facebook app id. This
-   * method can bee called manually if needed. The behavior of Facebook SDK functions are
+   * method can be called manually if needed. The behavior of Facebook SDK functions are
    * undetermined if this function is not called. It should be called as early as possible. As part
    * of SDK initialization basic auto logging of app events will occur, this can be controlled via
    * 'com.facebook.sdk.AutoLogAppEventsEnabled' manifest setting
@@ -669,6 +687,7 @@ public final class FacebookSdk {
    * @param context The application context.
    * @param applicationId The application id.
    */
+  @AutoHandleExceptions
   public static void publishInstallAsync(final Context context, final String applicationId) {
     // grab the application context ahead of time, since we will return to the caller
     // immediately.
@@ -681,8 +700,14 @@ public final class FacebookSdk {
                 FacebookSdk.publishInstallAndWaitForResponse(applicationContext, applicationId);
               }
             });
+
+    if (FeatureManager.isEnabled(FeatureManager.Feature.OnDeviceEventProcessing)
+        && OnDeviceProcessingManager.isOnDeviceProcessingEnabled()) {
+      OnDeviceProcessingManager.sendInstallEventAsync(applicationId, ATTRIBUTION_PREFERENCES);
+    }
   }
 
+  @AutoHandleExceptions
   static void publishInstallAndWaitForResponse(final Context context, final String applicationId) {
     try {
       if (context == null || applicationId == null) {
@@ -847,6 +872,7 @@ public final class FacebookSdk {
    * @param context The application context.
    * @return The application signature.
    */
+  @AutoHandleExceptions
   public static String getApplicationSignature(Context context) {
     Validate.sdkInitialized();
     if (context == null) {
@@ -1035,6 +1061,33 @@ public final class FacebookSdk {
    */
   public static void setMonitorEnabled(boolean flag) {
     UserSettingsManager.setMonitorEnabled(flag);
+  }
+
+  /** Sets data processing options */
+  @AutoHandleExceptions
+  public static void setDataProcessingOptions(String[] options) {
+    FacebookSdk.setDataProcessingOptions(options, 0, 0);
+  }
+
+  /** Sets data processing options */
+  @AutoHandleExceptions
+  public static void setDataProcessingOptions(String[] options, int country, int state) {
+    if (options == null) {
+      options = new String[] {};
+    }
+    try {
+      JSONObject dataProcessingOptions = new JSONObject();
+      JSONArray array = new JSONArray(Arrays.asList(options));
+      dataProcessingOptions.put(DATA_PROCESSION_OPTIONS, array);
+      dataProcessingOptions.put(DATA_PROCESSION_OPTIONS_COUNTRY, country);
+      dataProcessingOptions.put(DATA_PROCESSION_OPTIONS_STATE, state);
+      applicationContext
+          .getSharedPreferences(DATA_PROCESSING_OPTIONS_PREFERENCES, Context.MODE_PRIVATE)
+          .edit()
+          .putString(DATA_PROCESSION_OPTIONS, dataProcessingOptions.toString())
+          .apply();
+    } catch (JSONException e) {
+    }
   }
 
   /**

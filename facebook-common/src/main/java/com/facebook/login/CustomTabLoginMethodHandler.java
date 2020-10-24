@@ -57,20 +57,7 @@ public class CustomTabLoginMethodHandler extends WebLoginMethodHandler {
     expectedChallenge = Utility.generateRandomString(CHALLENGE_LENGTH);
     calledThroughLoggedOutAppSwitch = false;
 
-    boolean hasDeveloperDefinedRedirect =
-        Validate.hasCustomTabRedirectActivity(
-            FacebookSdk.getApplicationContext(), this.getDeveloperDefinedRedirectURI());
-    if (hasDeveloperDefinedRedirect) {
-      validRedirectURI = this.getDeveloperDefinedRedirectURI();
-    } else {
-      boolean hasDefaultRedirect =
-          Validate.hasCustomTabRedirectActivity(
-              FacebookSdk.getApplicationContext(), CustomTabUtils.getDefaultRedirectURI());
-
-      if (hasDefaultRedirect) {
-        validRedirectURI = CustomTabUtils.getDefaultRedirectURI();
-      }
-    }
+    validRedirectURI = CustomTabUtils.getValidRedirectURI(this.getDeveloperDefinedRedirectURI());
   }
 
   @Override
@@ -98,9 +85,9 @@ public class CustomTabLoginMethodHandler extends WebLoginMethodHandler {
   }
 
   @Override
-  boolean tryAuthorize(final LoginClient.Request request) {
-    if (!isCustomTabsAllowed()) {
-      return false;
+  int tryAuthorize(final LoginClient.Request request) {
+    if (this.getRedirectUrl().isEmpty()) {
+      return 0;
     }
 
     Bundle parameters = getParameters(request);
@@ -120,11 +107,7 @@ public class CustomTabLoginMethodHandler extends WebLoginMethodHandler {
     intent.putExtra(CustomTabMainActivity.EXTRA_CHROME_PACKAGE, getChromePackage());
     loginClient.getFragment().startActivityForResult(intent, CUSTOM_TAB_REQUEST_CODE);
 
-    return true;
-  }
-
-  private boolean isCustomTabsAllowed() {
-    return getChromePackage() != null && !this.getRedirectUrl().isEmpty();
+    return 1;
   }
 
   private String getChromePackage() {
@@ -137,6 +120,15 @@ public class CustomTabLoginMethodHandler extends WebLoginMethodHandler {
 
   @Override
   boolean onActivityResult(int requestCode, int resultCode, Intent data) {
+    if (data != null) {
+      boolean hasNoBrowserException =
+          data.getBooleanExtra(CustomTabMainActivity.NO_ACTIVITY_EXCEPTION, false);
+
+      if (hasNoBrowserException) {
+        return super.onActivityResult(requestCode, resultCode, data);
+      }
+    }
+
     if (requestCode != CUSTOM_TAB_REQUEST_CODE) {
       return super.onActivityResult(requestCode, resultCode, data);
     }

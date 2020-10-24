@@ -35,6 +35,7 @@ import androidx.annotation.Nullable;
 import com.facebook.FacebookException;
 import com.facebook.FacebookOperationCanceledException;
 import com.facebook.FacebookSdk;
+import com.facebook.internal.instrument.crashshield.AutoHandleExceptions;
 import com.facebook.login.DefaultAudience;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -52,6 +53,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * Android. Use of any of the classes in this package is unsupported, and they may be modified or
  * removed without warning at any time.
  */
+@AutoHandleExceptions
 public final class NativeProtocol {
 
   public static final int NO_PROTOCOL_AVAILABLE = -1;
@@ -510,7 +512,7 @@ public final class NativeProtocol {
     return intent;
   }
 
-  public static Intent createProxyAuthIntent(
+  public static List<Intent> createProxyAuthIntents(
       Context context,
       String applicationId,
       Collection<String> permissions,
@@ -521,6 +523,7 @@ public final class NativeProtocol {
       String clientState,
       String authType,
       boolean ignoreAppSwitchToLoggedOut) {
+    List<Intent> intents = new ArrayList<>();
     for (NativeAppInfo appInfo : facebookAppInfoList) {
       Intent intent =
           createNativeAppIntent(
@@ -534,13 +537,12 @@ public final class NativeProtocol {
               clientState,
               authType,
               ignoreAppSwitchToLoggedOut);
-      intent = validateActivityIntent(context, intent, appInfo);
 
       if (intent != null) {
-        return intent;
+        intents.add(intent);
       }
     }
-    return null;
+    return intents;
   }
 
   public static Intent createTokenRefreshIntent(Context context) {

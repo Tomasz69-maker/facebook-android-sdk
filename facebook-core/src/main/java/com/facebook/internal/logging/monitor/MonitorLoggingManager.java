@@ -26,6 +26,7 @@ import static com.facebook.internal.logging.monitor.MonitorLogServerProtocol.PAR
 
 import android.os.Build;
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphRequestBatch;
@@ -55,8 +56,9 @@ import org.json.JSONObject;
  * <p>Each GraphRequest can have limited number of logs in the parameter in maximum. We send the
  * GraphRequest(s) using GraphRequestBatch call.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MonitorLoggingManager implements LoggingManager {
-  private static final int FLUSH_PERIOD = 60; // in second
+  private static final int FLUSH_PERIOD = 5; // in minute
   private static final Integer MAX_LOG_NUMBER_PER_REQUEST = 100;
   private static final String ENTRIES_KEY = "entries";
   private static final String MONITORING_ENDPOINT = "monitorings";
@@ -113,7 +115,7 @@ public class MonitorLoggingManager implements LoggingManager {
               flushAndWait();
             } else if (flushTimer == null) {
               flushTimer =
-                  singleThreadExecutor.schedule(flushRunnable, FLUSH_PERIOD, TimeUnit.SECONDS);
+                  singleThreadExecutor.schedule(flushRunnable, FLUSH_PERIOD, TimeUnit.MINUTES);
             }
           }
         });
@@ -186,7 +188,7 @@ public class MonitorLoggingManager implements LoggingManager {
       params.put(PARAM_DEVICE_OS_VERSION, deviceOSVersion);
       params.put(PARAM_DEVICE_MODEL, deviceModel);
       params.put(PARAM_UNIQUE_APPLICATION_ID, packageName);
-      params.put(ENTRIES_KEY, logsToParams);
+      params.put(ENTRIES_KEY, logsToParams.toString());
     } catch (JSONException e) {
       return null;
     }

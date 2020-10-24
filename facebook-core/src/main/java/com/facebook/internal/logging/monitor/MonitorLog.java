@@ -26,6 +26,7 @@ import static com.facebook.internal.logging.monitor.MonitorLogServerProtocol.PAR
 import static com.facebook.internal.logging.monitor.MonitorLogServerProtocol.PARAM_TIME_START;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RestrictTo;
 import com.facebook.internal.logging.ExternalLog;
 import com.facebook.internal.logging.LogCategory;
 import com.facebook.internal.logging.LogEvent;
@@ -38,6 +39,7 @@ import org.json.JSONObject;
  * MonitorLog will be sent to the server via our Monitor. MonitorLog must have a Log Event including
  * a logCategory and an event name which indicates the specific tracked feature/function.
  */
+@RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public class MonitorLog implements ExternalLog {
 
   private static final long serialVersionUID = 1L;
@@ -53,7 +55,9 @@ public class MonitorLog implements ExternalLog {
 
   static {
     validPerformanceEventNames = new HashSet<>();
-    validPerformanceEventNames.add("FB_CORE_STARTUP");
+    for (PerformanceEventName eventName : PerformanceEventName.values()) {
+      validPerformanceEventNames.add(eventName.toString());
+    }
   }
 
   public MonitorLog(LogBuilder logBuilder) {
@@ -131,6 +135,10 @@ public class MonitorLog implements ExternalLog {
                 + ".");
       }
     }
+  }
+
+  public boolean isValid() {
+    return timeStart >= 0 && timeSpent >= 0;
   }
 
   @Override

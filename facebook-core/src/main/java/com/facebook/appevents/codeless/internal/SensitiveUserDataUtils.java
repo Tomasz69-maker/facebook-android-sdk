@@ -25,7 +25,12 @@ import android.text.method.PasswordTransformationMethod;
 import android.text.method.TransformationMethod;
 import android.view.View;
 import android.widget.TextView;
+import com.facebook.internal.instrument.crashshield.AutoHandleExceptions;
+import com.facebook.internal.qualityvalidation.Excuse;
+import com.facebook.internal.qualityvalidation.ExcusesForDesignViolations;
 
+@ExcusesForDesignViolations(@Excuse(type = "MISSING_UNIT_TEST", reason = "Legacy"))
+@AutoHandleExceptions
 public class SensitiveUserDataUtils {
 
   public static boolean isSensitiveUserData(View view) {

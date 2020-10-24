@@ -25,6 +25,7 @@ import android.util.Log;
 import com.facebook.FacebookSdk;
 import com.facebook.appevents.internal.AppEventUtility;
 import com.facebook.internal.Utility;
+import com.facebook.internal.instrument.crashshield.AutoHandleExceptions;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.FileNotFoundException;
@@ -34,6 +35,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectStreamClass;
 
+@AutoHandleExceptions
 class AppEventStore {
   private static final String TAG = AppEventStore.class.getName();
   private static final String PERSISTED_EVENTS_FILENAME = "AppEventsLogger.persistedevents";
@@ -42,13 +44,7 @@ class AppEventStore {
       final AccessTokenAppIdPair accessTokenAppIdPair, final SessionEventsState appEvents) {
     AppEventUtility.assertIsNotMainThread();
     PersistedEvents persistedEvents = readAndClearStore();
-
-    if (persistedEvents.containsKey(accessTokenAppIdPair)) {
-      persistedEvents.get(accessTokenAppIdPair).addAll(appEvents.getEventsToPersist());
-    } else {
-      persistedEvents.addEvents(accessTokenAppIdPair, appEvents.getEventsToPersist());
-    }
-
+    persistedEvents.addEvents(accessTokenAppIdPair, appEvents.getEventsToPersist());
     saveEventsToDisk(persistedEvents);
   }
 
@@ -102,7 +98,7 @@ class AppEventStore {
   }
 
   // Only call from singleThreadExecutor
-  private static void saveEventsToDisk(PersistedEvents eventsToPersist) {
+  protected static void saveEventsToDisk(PersistedEvents eventsToPersist) {
     ObjectOutputStream oos = null;
     Context context = FacebookSdk.getApplicationContext();
     try {

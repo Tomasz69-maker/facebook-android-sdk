@@ -28,6 +28,7 @@ import android.os.Build;
 import android.os.Bundle;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
+import androidx.annotation.VisibleForTesting;
 import com.facebook.FacebookSdk;
 import com.facebook.GraphRequest;
 import com.facebook.GraphResponse;
@@ -56,6 +57,20 @@ public final class CodelessManager {
   private static Boolean isAppIndexingEnabled = false;
   private static volatile Boolean isCheckingSession = false;
 
+  /** Abstraction for testability. */
+  @VisibleForTesting
+  public interface CodelessSessionChecker {
+    void checkCodelessSession(final String applicationId);
+  }
+
+  private static CodelessSessionChecker codelessSessionChecker =
+      new CodelessSessionChecker() {
+        @Override
+        public void checkCodelessSession(final String applicationId) {
+          CodelessManager.checkCodelessSession(applicationId);
+        }
+      };
+
   public static void onActivityResumed(final Activity activity) {
     if (!isCodelessEnabled.get()) {
       return;
@@ -67,8 +82,7 @@ public final class CodelessManager {
     final String appId = FacebookSdk.getApplicationId();
     final FetchedAppSettings appSettings =
         FetchedAppSettingsManager.getAppSettingsWithoutQuery(appId);
-    if ((appSettings != null && appSettings.getCodelessEventsEnabled())
-        || (BuildConfig.DEBUG && AppEventUtility.isEmulator())) {
+    if ((appSettings != null && appSettings.getCodelessEventsEnabled()) || isDebugOnEmulator()) {
       sensorManager = (SensorManager) applicationContext.getSystemService(Context.SENSOR_SERVICE);
       if (sensorManager == null) {
         return;
@@ -86,7 +100,7 @@ public final class CodelessManager {
                   FacebookSdk.getCodelessSetupEnabled()
                       || (BuildConfig.DEBUG && AppEventUtility.isEmulator());
               if (codelessEventsEnabled && codelessSetupEnabled) {
-                checkCodelessSession(appId);
+                codelessSessionChecker.checkCodelessSession(appId);
               }
             }
           });
@@ -98,10 +112,10 @@ public final class CodelessManager {
       }
     }
 
-    if (BuildConfig.DEBUG && AppEventUtility.isEmulator() && !isAppIndexingEnabled) {
+    if (isDebugOnEmulator() && !isAppIndexingEnabled) {
       // Check session on start when app launched
       // on emulator and built in DEBUG mode
-      checkCodelessSession(appId);
+      codelessSessionChecker.checkCodelessSession(appId);
     }
   }
 
@@ -132,7 +146,7 @@ public final class CodelessManager {
     isCodelessEnabled.set(false);
   }
 
-  private static void checkCodelessSession(final String applicationId) {
+  static void checkCodelessSession(final String applicationId) {
     if (isCheckingSession) {
       return;
     }
@@ -199,6 +213,10 @@ public final class CodelessManager {
             });
   }
 
+  static boolean isDebugOnEmulator() {
+    return BuildConfig.DEBUG && AppEventUtility.isEmulator();
+  }
+
   static String getCurrentDeviceSessionID() {
     if (null == deviceSessionID) {
       deviceSessionID = UUID.randomUUID().toString();
@@ -213,5 +231,10 @@ public final class CodelessManager {
 
   static void updateAppIndexing(Boolean appIndexingEnalbed) {
     isAppIndexingEnabled = appIndexingEnalbed;
+  }
+
+  @VisibleForTesting
+  static void setCodelessSessionChecker(CodelessSessionChecker codelessSessionChecker) {
+    CodelessManager.codelessSessionChecker = codelessSessionChecker;
   }
 }

@@ -23,8 +23,13 @@ package com.facebook.internal.logging.monitor;
 import static com.facebook.internal.logging.monitor.MonitorLoggingTestUtil.TEST_APP_ID;
 import static com.facebook.internal.logging.monitor.MonitorLoggingTestUtil.TEST_DEFAULT_SAMPLING_RATE;
 import static com.facebook.internal.logging.monitor.MonitorLoggingTestUtil.TEST_EVENT_NAME;
+import static com.facebook.internal.logging.monitor.MonitorLoggingTestUtil.TEST_PERFORMANCE_EVENT_NAME;
 import static com.facebook.internal.logging.monitor.MonitorLoggingTestUtil.TEST_SAMPLING_RATE;
 import static com.facebook.internal.logging.monitor.MonitorLoggingTestUtil.TEST_TIME_START;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.powermock.api.mockito.PowerMockito.mockStatic;
 import static org.powermock.api.mockito.PowerMockito.spy;
@@ -36,6 +41,7 @@ import java.util.Map;
 import java.util.concurrent.Executor;
 import org.json.JSONException;
 import org.json.JSONObject;
+import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -131,7 +137,7 @@ public class MonitorTest extends FacebookPowerMockTestCase {
   public void testIsSampledForEventNotInSamplingRatesMap() {
     Integer mockDefaultSamplingRate = 1;
     ReflectionHelpers.setStaticField(Monitor.class, "defaultSamplingRate", mockDefaultSamplingRate);
-    Assert.assertTrue(Monitor.isSampled(monitorLog));
+    Assert.assertTrue(Monitor.isSampled(TEST_EVENT_NAME));
   }
 
   @Test
@@ -139,5 +145,49 @@ public class MonitorTest extends FacebookPowerMockTestCase {
     Monitor.enable();
     Monitor.addLog(monitorLog);
     verify(mockMonitorLoggingManager).addLog(monitorLog);
+  }
+
+  @Test
+  public void testMeasurePerfForWithoutExtraId() {
+    testMeasurePerfInit();
+    Monitor.startMeasurePerfFor(TEST_PERFORMANCE_EVENT_NAME);
+    Monitor.stopMeasurePerfFor(TEST_PERFORMANCE_EVENT_NAME);
+    verify(mockMonitorLoggingManager).addLog(any(MonitorLog.class));
+  }
+
+  @Test
+  public void testMeasurePerfForWithExtraId() {
+    testMeasurePerfInit();
+    long extraId = Monitor.generateExtraId();
+    Monitor.startMeasurePerfFor(TEST_PERFORMANCE_EVENT_NAME, extraId);
+    Monitor.stopMeasurePerfFor(TEST_PERFORMANCE_EVENT_NAME, extraId);
+    verify(mockMonitorLoggingManager).addLog(any(MonitorLog.class));
+  }
+
+  @Test
+  public void testStopMeasurePerfForWithoutStartMeasurePerfFor() {
+    testMeasurePerfInit();
+    Monitor.stopMeasurePerfFor(TEST_PERFORMANCE_EVENT_NAME);
+    verify(mockMonitorLoggingManager, never()).addLog(any(MonitorLog.class));
+  }
+
+  @Test
+  public void testMultipleCallStartMeasurePerfFor() {
+    testMeasurePerfInit();
+    Monitor.startMeasurePerfFor(TEST_PERFORMANCE_EVENT_NAME);
+    Monitor.startMeasurePerfFor(TEST_PERFORMANCE_EVENT_NAME);
+    Monitor.stopMeasurePerfFor(TEST_PERFORMANCE_EVENT_NAME);
+    verify(mockMonitorLoggingManager, times(1)).addLog(any(MonitorLog.class));
+  }
+
+  // make sure we have removed the temporary metrics data after each test
+  @After
+  public void tearDown() {
+    Monitor.cancelMeasurePerfFor(TEST_PERFORMANCE_EVENT_NAME);
+  }
+
+  static void testMeasurePerfInit() {
+    PowerMockito.when(Monitor.isSampled(anyString())).thenReturn(true);
+    Monitor.enable();
   }
 }

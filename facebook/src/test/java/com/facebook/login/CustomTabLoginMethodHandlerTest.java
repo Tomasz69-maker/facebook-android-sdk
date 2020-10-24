@@ -21,10 +21,8 @@
 package com.facebook.login;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
@@ -157,7 +155,7 @@ public class CustomTabLoginMethodHandlerTest extends LoginHandlerTestCase {
 
     CustomTabLoginMethodHandler handler = new CustomTabLoginMethodHandler(mockLoginClient);
 
-    assertTrue(handler.tryAuthorize(request));
+    assertEquals(handler.tryAuthorize(request), 1);
   }
 
   @Test
@@ -166,7 +164,7 @@ public class CustomTabLoginMethodHandlerTest extends LoginHandlerTestCase {
     mockChromeCustomTabsSupported(true, CHROME_PACKAGE);
 
     CustomTabLoginMethodHandler handler = new CustomTabLoginMethodHandler(mockLoginClient);
-    assertTrue(handler.tryAuthorize(request));
+    assertEquals(handler.tryAuthorize(request), 1);
   }
 
   @Test
@@ -175,7 +173,7 @@ public class CustomTabLoginMethodHandlerTest extends LoginHandlerTestCase {
     mockChromeCustomTabsSupported(true, BETA_PACKAGE);
 
     CustomTabLoginMethodHandler handler = new CustomTabLoginMethodHandler(mockLoginClient);
-    assertTrue(handler.tryAuthorize(request));
+    assertEquals(handler.tryAuthorize(request), 1);
   }
 
   @Test
@@ -185,17 +183,7 @@ public class CustomTabLoginMethodHandlerTest extends LoginHandlerTestCase {
 
     CustomTabLoginMethodHandler handler = new CustomTabLoginMethodHandler(mockLoginClient);
 
-    assertTrue(handler.tryAuthorize(request));
-  }
-
-  @Test
-  public void testTryAuthorizeWithoutChromePackage() {
-    mockCustomTabRedirectActivity(true);
-    mockChromeCustomTabsSupported(true, "not.chrome.package");
-
-    CustomTabLoginMethodHandler handler = new CustomTabLoginMethodHandler(mockLoginClient);
-
-    assertFalse(handler.tryAuthorize(request));
+    assertEquals(handler.tryAuthorize(request), 1);
   }
 
   private void mockTryAuthorize() {

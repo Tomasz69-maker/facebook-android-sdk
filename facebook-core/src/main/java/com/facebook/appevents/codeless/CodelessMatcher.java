@@ -48,6 +48,8 @@ import com.facebook.internal.FetchedAppSettingsManager;
 import com.facebook.internal.InternalSettings;
 import com.facebook.internal.Utility;
 import com.facebook.internal.instrument.crashshield.AutoHandleExceptions;
+import com.facebook.internal.qualityvalidation.Excuse;
+import com.facebook.internal.qualityvalidation.ExcusesForDesignViolations;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -57,6 +59,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.WeakHashMap;
 
+@ExcusesForDesignViolations(@Excuse(type = "MISSING_UNIT_TEST", reason = "Legacy"))
 @AutoHandleExceptions
 class CodelessMatcher {
   private static final String PARENT_CLASS_NAME = "..";
@@ -250,7 +253,6 @@ class CodelessMatcher {
           observer.addOnGlobalLayoutListener(this);
           observer.addOnScrollChangedListener(this);
         }
-
         startMatch();
       }
     }

@@ -31,8 +31,6 @@ import androidx.annotation.Nullable;
 import com.facebook.AccessToken;
 import com.facebook.FacebookException;
 import com.facebook.FacebookSdk;
-import com.facebook.GraphRequest;
-import com.facebook.HttpMethod;
 import com.facebook.LoggingBehavior;
 import com.facebook.appevents.AppEventsLogger.FlushBehavior;
 import com.facebook.appevents.AppEventsLogger.ProductAvailability;
@@ -40,28 +38,28 @@ import com.facebook.appevents.AppEventsLogger.ProductCondition;
 import com.facebook.appevents.internal.ActivityLifecycleTracker;
 import com.facebook.appevents.internal.AutomaticAnalyticsLogger;
 import com.facebook.appevents.internal.Constants;
+import com.facebook.appevents.ondeviceprocessing.OnDeviceProcessingManager;
 import com.facebook.internal.AnalyticsEvents;
-import com.facebook.internal.AttributionIdentifiers;
-import com.facebook.internal.BundleJSONConverter;
+import com.facebook.internal.FeatureManager;
 import com.facebook.internal.FetchedAppGateKeepersManager;
 import com.facebook.internal.FetchedAppSettingsManager;
 import com.facebook.internal.InstallReferrerUtil;
 import com.facebook.internal.Logger;
 import com.facebook.internal.Utility;
 import com.facebook.internal.Validate;
+import com.facebook.internal.instrument.crashshield.AutoHandleExceptions;
 import java.math.BigDecimal;
 import java.util.Currency;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+@AutoHandleExceptions
 class AppEventsLoggerImpl {
 
   // Constants
@@ -455,58 +453,6 @@ class AppEventsLoggerImpl {
         new FacebookSDKJSInterface(context), "fbmq_" + FacebookSdk.getApplicationId());
   }
 
-  static void updateUserProperties(
-      final Bundle parameters, final String applicationID, final GraphRequest.Callback callback) {
-    getAnalyticsExecutor()
-        .execute(
-            new Runnable() {
-              @Override
-              public void run() {
-                final String userID = AnalyticsUserIDStore.getUserID();
-                if (userID == null || userID.isEmpty()) {
-                  Logger.log(
-                      LoggingBehavior.APP_EVENTS,
-                      TAG,
-                      "AppEventsLogger userID cannot be null or empty");
-                  return;
-                }
-
-                Bundle userPropertiesParams = new Bundle();
-                userPropertiesParams.putString("user_unique_id", userID);
-                userPropertiesParams.putBundle("custom_data", parameters);
-                // This call must be run on the background thread
-                AttributionIdentifiers identifiers =
-                    AttributionIdentifiers.getAttributionIdentifiers(
-                        FacebookSdk.getApplicationContext());
-                if (identifiers != null && identifiers.getAndroidAdvertiserId() != null) {
-                  userPropertiesParams.putString(
-                      "advertiser_id", identifiers.getAndroidAdvertiserId());
-                }
-
-                Bundle data = new Bundle();
-                try {
-                  JSONObject userData = BundleJSONConverter.convertToJSON(userPropertiesParams);
-                  JSONArray dataArray = new JSONArray();
-                  dataArray.put(userData);
-
-                  data.putString("data", dataArray.toString());
-                } catch (JSONException ex) {
-                  throw new FacebookException("Failed to construct request", ex);
-                }
-
-                GraphRequest request =
-                    new GraphRequest(
-                        AccessToken.getCurrentAccessToken(),
-                        String.format(Locale.US, "%s/user_properties", applicationID),
-                        data,
-                        HttpMethod.POST,
-                        callback);
-                request.setSkipClientToken(true);
-                request.executeAsync();
-              }
-            });
-  }
-
   void logSdkEvent(String eventName, Double valueToSum, Bundle parameters) {
     if (!eventName.startsWith(ACCOUNT_KIT_EVENT_NAME_PREFIX)) {
       Log.e(
@@ -667,6 +613,11 @@ class AppEventsLoggerImpl {
 
   private static void logEvent(final AppEvent event, final AccessTokenAppIdPair accessTokenAppId) {
     AppEventQueue.add(accessTokenAppId, event);
+
+    if (FeatureManager.isEnabled(FeatureManager.Feature.OnDevicePostInstallEventProcessing)
+        && OnDeviceProcessingManager.isOnDeviceProcessingEnabled()) {
+      OnDeviceProcessingManager.sendCustomEventAsync(accessTokenAppId.getApplicationId(), event);
+    }
 
     // Make sure Activated_App is always before other app events
     if (!event.getIsImplicit() && !isActivateAppEventRequested) {

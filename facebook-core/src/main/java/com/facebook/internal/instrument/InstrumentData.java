@@ -24,11 +24,14 @@ import android.os.Build;
 import androidx.annotation.Nullable;
 import androidx.annotation.RestrictTo;
 import com.facebook.internal.Utility;
+import com.facebook.internal.qualityvalidation.Excuse;
+import com.facebook.internal.qualityvalidation.ExcusesForDesignViolations;
 import java.io.File;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+@ExcusesForDesignViolations(@Excuse(type = "MISSING_UNIT_TEST", reason = "Legacy"))
 @RestrictTo(RestrictTo.Scope.LIBRARY_GROUP)
 public final class InstrumentData {
 
@@ -51,10 +54,25 @@ public final class InstrumentData {
         case ThreadCheck:
           return "ThreadCheck";
       }
-      return "Unknown";
+      return UNKNOWN;
+    }
+
+    public String getLogPrefix() {
+      switch (this) {
+        case Analysis:
+          return InstrumentUtility.ANALYSIS_REPORT_PREFIX;
+        case CrashReport:
+          return InstrumentUtility.CRASH_REPORT_PREFIX;
+        case CrashShield:
+          return InstrumentUtility.CRASH_SHIELD_PREFIX;
+        case ThreadCheck:
+          return InstrumentUtility.THREAD_CHECK_PREFIX;
+      }
+      return UNKNOWN;
     }
   }
 
+  private static final String UNKNOWN = "Unknown";
   private static final String PARAM_TIMESTAMP = "timestamp";
   private static final String PARAM_APP_VERSION = "app_version";
   private static final String PARAM_DEVICE_OS = "device_os_version";
@@ -92,7 +110,7 @@ public final class InstrumentData {
     timestamp = System.currentTimeMillis() / 1000;
     filename =
         new StringBuffer()
-            .append(InstrumentUtility.CRASH_REPORT_PREFIX)
+            .append(t.getLogPrefix())
             .append(timestamp.toString())
             .append(".json")
             .toString();

@@ -64,7 +64,7 @@ abstract class LoginMethodHandler implements Parcelable {
     this.loginClient = loginClient;
   }
 
-  abstract boolean tryAuthorize(LoginClient.Request request);
+  abstract int tryAuthorize(LoginClient.Request request);
 
   abstract String getNameForLogging();
 
@@ -217,5 +217,9 @@ abstract class LoginMethodHandler implements Parcelable {
   @Override
   public void writeToParcel(Parcel dest, int flags) {
     Utility.writeStringMapToParcel(dest, methodLoggingExtras);
+  }
+
+  public boolean shouldKeepTrackOfMultipleIntents() {
+    return false;
   }
 }

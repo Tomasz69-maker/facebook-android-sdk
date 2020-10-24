@@ -139,13 +139,14 @@ public class DeviceAuthDialog extends DialogFragment {
   }
 
   @Override
-  public void onDestroy() {
+  public void onDestroyView() {
     // Set this to true so we know if we are being destroyed and then dismissing the dialog
     // Or if we are dismissing the dialog and then destroying the fragment. In latter we want
     // to do a cancel callback.
     isBeingDestroyed = true;
     completed.set(true);
-    super.onDestroy();
+    super.onDestroyView();
+
     if (currentGraphRequestPoll != null) {
       currentGraphRequestPoll.cancel(true);
     }
@@ -484,6 +485,7 @@ public class DeviceAuthDialog extends DialogFragment {
         expirationTime,
         null,
         dataAccessExpirationTime);
+
     dialog.dismiss();
   }
 

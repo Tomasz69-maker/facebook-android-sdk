@@ -45,11 +45,18 @@ public final class SuggestedEventsManager {
   private static final String ELIGIBLE_EVENTS_KEY = "eligible_for_prediction_events";
 
   public static synchronized void enable() {
-    if (enabled.get()) {
-      return;
-    }
-    enabled.set(true);
-    initialize();
+    FacebookSdk.getExecutor()
+        .execute(
+            new Runnable() {
+              @Override
+              public void run() {
+                if (enabled.get()) {
+                  return;
+                }
+                enabled.set(true);
+                initialize();
+              }
+            });
   }
 
   private static void initialize() {
@@ -63,19 +70,8 @@ public final class SuggestedEventsManager {
       if (rawSuggestedEventSetting == null) {
         return;
       }
-      JSONObject jsonObject = new JSONObject(rawSuggestedEventSetting);
-      if (jsonObject.has(PRODUCTION_EVENTS_KEY)) {
-        JSONArray jsonArray = jsonObject.getJSONArray(PRODUCTION_EVENTS_KEY);
-        for (int i = 0; i < jsonArray.length(); i++) {
-          productionEvents.add(jsonArray.getString(i));
-        }
-      }
-      if (jsonObject.has(ELIGIBLE_EVENTS_KEY)) {
-        JSONArray jsonArray = jsonObject.getJSONArray(ELIGIBLE_EVENTS_KEY);
-        for (int i = 0; i < jsonArray.length(); i++) {
-          eligibleEvents.add(jsonArray.getString(i));
-        }
-      }
+      populateEventsFromRawJsonString(rawSuggestedEventSetting);
+
       if (!productionEvents.isEmpty() || !eligibleEvents.isEmpty()) {
         File ruleFile = ModelManager.getRuleFile(ModelManager.Task.MTML_APP_EVENT_PREDICTION);
         if (ruleFile == null) {
@@ -89,6 +85,27 @@ public final class SuggestedEventsManager {
       }
     } catch (Exception e) {
       /*no op*/
+    }
+  }
+
+  protected static void populateEventsFromRawJsonString(String rawSuggestedEventSetting) {
+    try {
+      JSONObject jsonObject = new JSONObject(rawSuggestedEventSetting);
+
+      if (jsonObject.has(PRODUCTION_EVENTS_KEY)) {
+        JSONArray jsonArray = jsonObject.getJSONArray(PRODUCTION_EVENTS_KEY);
+        for (int i = 0; i < jsonArray.length(); i++) {
+          productionEvents.add(jsonArray.getString(i));
+        }
+      }
+      if (jsonObject.has(ELIGIBLE_EVENTS_KEY)) {
+        JSONArray jsonArray = jsonObject.getJSONArray(ELIGIBLE_EVENTS_KEY);
+        for (int i = 0; i < jsonArray.length(); i++) {
+          eligibleEvents.add(jsonArray.getString(i));
+        }
+      }
+    } catch (Exception e) {
+      /*noop*/
     }
   }
 

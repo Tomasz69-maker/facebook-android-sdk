@@ -6,7 +6,51 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+
+## [8.1.0] - 2020-10-13
+
+## Changed
+
+- Mitigations for switching to Facebook app for logging in, due to Android 11 package visibility change
+
+## [8.0.0] - 2020-09-23
+
+**Note: The current version uses Graph API v8.0. To use the latest Graph API version, please specific that version in your GraphRequest call.**
+
+## Added
+
+- Added Performance Guardian to improve the performance of Suggested Events and Codeless
+- Added ReferralManager for integrating with web Referral dialog
+
+## Changed
+
+- Updated tokenless profile picture API call
+
+## Fixed
+
+- Fixed callback issues for GamingImageUploader
+
+## Deprecated
+
+- Deprecated GameRequestDialog
+- Deprecated DeviceShareDialog
+
+## [7.1.0] - 2020-06-19
+
+## Added
+
+- Introduce DataProcessingOptions
+
+### Deprecated
+
+- Remove UserProperties API
+
+## [7.0.1] - 2020-06-09
+- AAM improvement
+- Corrected the report type of Crash Reports
 - Handle RejectedExecutionException in ViewIndexer.schedule()
+- Fixed the exception in getRootView
+- Fixed model cache issue
 
 ## [7.0.0] - 2020-05-05
 
@@ -222,6 +266,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- Links -->
 
 [Unreleased]: https://github.com/facebook/facebook-android-sdk/compare/sdk-version-6.0.0...HEAD
+[8.1.0]: https://github.com/facebook/facebook-android-sdk/compare/sdk-version-8.0.0...sdk-version-8.1.0
+[8.0.0]: https://github.com/facebook/facebook-android-sdk/compare/sdk-version-7.1.0...sdk-version-8.0.0
+[7.1.0]: https://github.com/facebook/facebook-android-sdk/compare/sdk-version-7.0.1...sdk-version-7.1.0
+[7.0.1]: https://github.com/facebook/facebook-android-sdk/compare/sdk-version-7.0.0...sdk-version-7.0.1
 [7.0.0]: https://github.com/facebook/facebook-android-sdk/compare/sdk-version-6.5.1...sdk-version-7.0.0
 [6.5.1]: https://github.com/facebook/facebook-android-sdk/compare/sdk-version-6.5.0...sdk-version-6.5.1
 [6.5.0]: https://github.com/facebook/facebook-android-sdk/compare/sdk-version-6.4.0...sdk-version-6.5.0

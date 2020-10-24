@@ -290,7 +290,7 @@ public final class FetchedAppSettingsManager {
     return fetchedAppSettings;
   }
 
-  private static FetchedAppSettings parseAppSettingsFromJSON(
+  protected static FetchedAppSettings parseAppSettingsFromJSON(
       String applicationId, final JSONObject settingsJSON) {
     JSONArray errorClassificationJSON =
         settingsJSON.optJSONArray(APP_SETTING_ANDROID_SDK_ERROR_CATEGORIES);

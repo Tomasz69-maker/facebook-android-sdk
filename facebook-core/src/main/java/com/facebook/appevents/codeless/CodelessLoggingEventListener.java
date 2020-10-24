@@ -56,13 +56,7 @@ public class CodelessLoggingEventListener {
     final String eventName = mapping.getEventName();
     final Bundle parameters = CodelessMatcher.getParameters(mapping, rootView, hostView);
 
-    if (parameters.containsKey(AppEventsConstants.EVENT_PARAM_VALUE_TO_SUM)) {
-      String value = parameters.getString(AppEventsConstants.EVENT_PARAM_VALUE_TO_SUM);
-      parameters.putDouble(
-          AppEventsConstants.EVENT_PARAM_VALUE_TO_SUM, AppEventUtility.normalizePrice(value));
-    }
-
-    parameters.putString(Constants.IS_CODELESS_EVENT_KEY, "1");
+    updateParameters(parameters);
 
     FacebookSdk.getExecutor()
         .execute(
@@ -74,6 +68,15 @@ public class CodelessLoggingEventListener {
                 appEventsLogger.logEvent(eventName, parameters);
               }
             });
+  }
+
+  protected static void updateParameters(Bundle parameters) {
+    String value = parameters.getString(AppEventsConstants.EVENT_PARAM_VALUE_TO_SUM);
+    if (value != null) {
+      parameters.putDouble(
+          AppEventsConstants.EVENT_PARAM_VALUE_TO_SUM, AppEventUtility.normalizePrice(value));
+    }
+    parameters.putString(Constants.IS_CODELESS_EVENT_KEY, "1");
   }
 
   public static class AutoLoggingOnClickListener implements View.OnClickListener {

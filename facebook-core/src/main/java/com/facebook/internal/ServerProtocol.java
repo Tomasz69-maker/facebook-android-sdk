@@ -80,7 +80,7 @@ public final class ServerProtocol {
   // URL components
   private static final String GRAPH_VIDEO_URL_FORMAT = "https://graph-video.%s";
   private static final String GRAPH_URL_FORMAT = "https://graph.%s";
-  private static final String GRAPH_API_VERSION = "v6.0";
+  private static final String GRAPH_API_VERSION = "v8.0";
 
   public static final Collection<String> errorsProxyAuthDisabled =
       Utility.unmodifiableCollection("service_disabled", "AndroidAuthKillSwitchException");
@@ -135,7 +135,7 @@ public final class ServerProtocol {
 
       webParams.putString(FALLBACK_DIALOG_PARAM_BRIDGE_ARGS, bridgeArgsJSON.toString());
       webParams.putString(FALLBACK_DIALOG_PARAM_METHOD_ARGS, methodArgsJSON.toString());
-    } catch (JSONException je) {
+    } catch (JSONException | IllegalArgumentException je) {
       webParams = null;
       Logger.log(LoggingBehavior.DEVELOPER_ERRORS, Log.ERROR, TAG, "Error creating Url -- " + je);
     }
